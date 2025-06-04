@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Slope and Erosion Simulation</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 2em;
+      background: #eef6f1;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      text-align: center;
+    }
+    canvas {
+      max-width: 100%;
+    }
+    #infoBox {
+      margin-top: 1em;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Sensitivity of Soil Erosion to Slope Gradient</h2>
+    <input type="range" id="slopeSlider" min="0" max="60" value="30">
+    <p>Slope Angle: <span id="slopeValue">30</span>°</p>
+    <button id="rainToggle">🌧️ Toggle Rain</button>
+    <div id="infoBox"></div>
+    <canvas id="erosionChart" height="200"></canvas>
+  </div>
+
+  <script>
+    const slopeSlider = document.getElementById("slopeSlider");
+    const slopeValue = document.getElementById("slopeValue");
+    const infoBox = document.getElementById("infoBox");
+    const rainToggle = document.getElementById("rainToggle");
+
+    let rainEnabled = false;
+
+    function erosion(theta) {
+      return rainEnabled
+        ? 0.05 * theta * theta
+        : 0.03 * theta * theta;
+    }
+
+    function dErosion(theta) {
+      return rainEnabled
+        ? 0.1 * theta
+        : 0.06 * theta;
+    }
+
+    const ctx = document.getElementById("erosionChart").getContext("2d");
+    const data = {
+      labels: Array.from({ length: 61 }, (_, i) => i),
+      datasets: [{
+        label: "Erosion (E)",
+        data: Array.from({ length: 61 }, (_, i) => erosion(i)),
+        fill: true,
+        borderColor: "green",
+        backgroundColor: "rgba(0, 128, 0, 0.1)"
+      }]
+    };
+
+    const erosionChart = new Chart(ctx, {
+      type: "line",
+      data: data,
+      options: {
+        scales: {
+          x: { title: { display: true, text: "Slope Angle (°)" } },
+          y: { title: { display: true, text: "Erosion / Sensitivity" } }
+        }
+      }
+    });
+
+    function updateSimulation() {
+      const angle = parseInt(slopeSlider.value);
+      slopeValue.textContent = angle;
+
+      const eVal = erosion(angle).toFixed(4);
+      const dEval = dErosion(angle).toFixed(4);
+      infoBox.innerHTML = `<strong>At θ = ${angle}°:</strong><br>
+        E(θ) = ${eVal}<br>
+        dE/dθ = ${dEval}`;
+
+      erosionChart.data.datasets[0].data = data.labels.map(erosion);
+      erosionChart.update();
+    }
+
+    slopeSlider.addEventListener("input", updateSimulation);
+    rainToggle.addEventListener("click", () => {
+      rainEnabled = !rainEnabled;
+      rainToggle.textContent = rainEnabled ? "🌈 Stop Rain" : "🌧️ Toggle Rain";
+      updateSimulation();
+    });
+
+    updateSimulation();
+  </script>
+</body>
+</html>
